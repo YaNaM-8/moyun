@@ -1,5 +1,5 @@
-const CACHE = 'moyun-v1';
-const FILES = ['/'];
+const CACHE = 'moyun-v2';
+const FILES = ['/', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
