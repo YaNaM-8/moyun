@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f0f1a">
+<link rel="manifest" href="manifest.json">
+<title>墨韵 - 小说写作助手</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f0f1a;--surface:#1a1a2e;--card:#16213e;--border:#2a2a4a;
+  --primary:#e2b04a;--primary-hover:#c99a3a;--danger:#e05555;
+  --text:#e0e0e0;--text-secondary:#9090a8;--text-muted:#606078;
+  --radius:12px;--radius-sm:8px;--nav-height:64px;--header-height:52px;
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans SC",sans-serif;background:var(--bg);color:var(--text);-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
+input,textarea,select,button{font-family:inherit;font-size:16px;color:var(--text)}
+a{color:var(--primary)}
+body{display:flex;flex-direction:column;max-width:480px;margin:0 auto;position:relative}
+.app-header{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;height:var(--header-height);min-height:var(--header-height);background:var(--surface);border-bottom:1px solid var(--border);z-index:10}
+.app-title{font-family:"KaiTi","STKaiti","楷体",serif;font-size:22px;font-weight:normal;color:var(--primary);letter-spacing:4px}
+.app-main{flex:1;overflow-y:auto;overflow-x:hidden;padding:12px 16px;padding-bottom:calc(var(--nav-height) + var(--safe-bottom) + 12px);-webkit-overflow-scrolling:touch}
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;display:flex;background:var(--surface);border-top:1px solid var(--border);height:calc(var(--nav-height) + var(--safe-bottom));padding-bottom:var(--safe-bottom);z-index:20}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:none;border:none;color:var(--text-muted);cursor:pointer;transition:color .2s;padding:6px 0}
+.nav-item.active{color:var(--primary)}.nav-item:active{opacity:.7}
+.nav-icon{font-size:22px;line-height:1}.nav-label{font-size:11px}
+.tab-content{animation:fadeIn .25s ease}.tab-content.hidden{display:none}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.section-header h2{font-size:20px;font-weight:600}
+.card{background:var(--card);border-radius:var(--radius);padding:14px;margin-bottom:10px;border:1px solid var(--border)}
+.card-list{display:flex;flex-direction:column;gap:8px}
+.card-item{background:var(--card);border-radius:var(--radius);padding:14px;border:1px solid var(--border);cursor:pointer;transition:border-color .2s,transform .15s}
+.card-item:active{transform:scale(.98);border-color:var(--primary)}
+.card-item-title{font-size:16px;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card-item-sub{font-size:13px;color:var(--text-secondary);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-item-meta{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.tag{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;background:var(--border);color:var(--text-secondary)}
+.tag-primary{background:rgba(226,176,74,.2);color:var(--primary)}
+.btn-primary{background:var(--primary);color:#1a1a2e;border:none;border-radius:var(--radius-sm);padding:10px 20px;font-weight:600;cursor:pointer;transition:background .2s}
+.btn-primary:active{background:var(--primary-hover)}
+.btn-sm{background:var(--border);color:var(--text);border:none;border-radius:var(--radius-sm);padding:6px 14px;font-size:13px;cursor:pointer;transition:background .2s}
+.btn-sm:active{background:#3a3a5a}
+.btn-danger{background:transparent;color:var(--danger);border:1px solid var(--danger);border-radius:var(--radius-sm);padding:8px 16px;font-size:14px;cursor:pointer;transition:all .2s}
+.btn-danger:active{background:var(--danger);color:#fff}
+.btn-icon{background:none;border:none;font-size:20px;cursor:pointer;padding:6px;border-radius:50%;transition:background .2s;color:var(--text)}
+.btn-icon:active{background:var(--border)}
+.btn-full{width:100%}
+.btn-row{display:flex;gap:8px}
+.btn-tag{background:var(--border);border:none;color:var(--text-secondary);padding:6px 12px;border-radius:99px;font-size:13px;cursor:pointer;transition:all .2s;white-space:nowrap}
+.btn-tag.active{background:rgba(226,176,74,.2);color:var(--primary)}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:13px;color:var(--text-secondary);margin-bottom:4px;font-weight:500}
+.form-group input,.form-group textarea,.form-group select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);transition:border-color .2s}
+.form-group input:focus,.form-group textarea:focus,.form-group select:focus{outline:none;border-color:var(--primary)}
+.form-group textarea{resize:vertical}
+.form-row{display:flex;gap:10px}
+.flex-1{flex:1}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239090a8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px!important}
+hr{border:none;border-top:1px solid var(--border);margin:16px 0}
+.word-count{display:inline-block;font-size:14px;color:var(--primary);padding:8px 0;font-weight:600}
+.acts-container{display:flex;flex-direction:column;gap:12px}
+.act-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.act-header{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--surface);cursor:pointer}
+.act-header-left{display:flex;align-items:center;gap:8px}
+.act-header h4{font-size:16px}
+.act-desc{font-size:13px;color:var(--text-secondary)}
+.act-header-actions{display:flex;gap:4px}
+.act-body{padding:0 14px 14px}
+.chapter-inline{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--surface);border-radius:var(--radius-sm);margin-bottom:6px;cursor:pointer;border:1px solid transparent}
+.chapter-inline:active{border-color:var(--primary)}
+.chapter-num{color:var(--primary);font-weight:600;font-size:14px;min-width:32px}
+.chapter-info{flex:1;min-width:0}
+.chapter-info .title{font-size:14px;font-weight:500}
+.chapter-info .summary{font-size:12px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Notes */
+.note-card{border-left:3px solid var(--primary)}
+.note-card .card-item-title{font-size:15px}
+.note-body{font-size:13px;color:var(--text-secondary);line-height:1.7;white-space:pre-wrap;margin-top:6px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.note-card .card-item-meta .tag{font-size:10px}
+.world-categories{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+.world-categories::-webkit-scrollbar{display:none}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:flex;align-items:flex-end;justify-content:center;animation:fadeIn .2s ease}
+.modal-overlay.hidden{display:none}
+.modal{background:var(--surface);border-radius:var(--radius) var(--radius) 0 0;width:100%;max-width:480px;max-height:90vh;display:flex;flex-direction:column;animation:slideUp .3s ease}
+.modal-full{max-height:95vh}
+.modal-sm{border-radius:var(--radius);margin-bottom:40vh}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border)}
+.modal-header h3{font-size:18px;font-weight:600}
+.modal-body{padding:16px;overflow-y:auto;flex:1}
+.modal-footer{display:flex;justify-content:space-between;padding:12px 16px;border-top:1px solid var(--border);gap:10px}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.empty-state{text-align:center;padding:40px 20px;color:var(--text-muted)}
+.empty-state .icon{font-size:48px;margin-bottom:12px}
+.empty-state p{font-size:14px;line-height:1.6}
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--card);color:var(--text);padding:10px 20px;border-radius:99px;font-size:14px;z-index:200;box-shadow:0 2px 12px rgba(0,0,0,.3);animation:toastIn .3s ease;white-space:nowrap}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+/* Status indicator */
+.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:middle;transition:background .3s}
+.status-dot.saved{background:#4caf50}
+.status-dot.saving{background:var(--primary);animation:pulse .8s infinite}
+.status-dot.error{background:var(--danger)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.status-text{font-size:11px;color:var(--text-muted);vertical-align:middle}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div style="display:flex;align-items:center;gap:8px">
+    <h1 class="app-title">墨韵</h1>
+    <span style="display:flex;align-items:center;white-space:nowrap">
+      <span class="status-dot saved" id="statusDot" title="保存状态：已保存"></span>
+      <span class="status-text" id="statusText"></span>
+    </span>
+  </div>
+  <button class="btn-icon" id="btnSettings" title="设置">⚙️</button>
+</header>
+
+<main class="app-main" id="appMain">
+
+  <!-- Tab: 大纲 -->
+  <section class="tab-content" id="tab-outline">
+    <div class="section-header"><h2>📋 大纲</h2><button class="btn-sm btn-primary" id="btnAddAct">+ 添加幕</button></div>
+    <div class="novel-info card" id="novelInfo">
+      <div class="form-group"><label>书名</label><input type="text" id="novelTitle" placeholder="输入书名..."></div>
+      <div class="form-group"><label>类型</label><input type="text" id="novelGenre" placeholder="如：玄幻、科幻、言情..."></div>
+      <div class="form-group"><label>一句话简介</label><textarea id="novelPremise" rows="2" placeholder="用一句话概括你的故事..."></textarea></div>
+      <button class="btn-sm btn-primary" id="btnSaveNovelInfo">保存</button>
+    </div>
+    <div id="outlineActs" class="acts-container"></div>
+  </section>
+
+  <!-- Tab: 人物 -->
+  <section class="tab-content hidden" id="tab-characters">
+    <div class="section-header"><h2>👤 人物</h2><button class="btn-sm btn-primary" id="btnAddCharacter">+ 添加人物</button></div>
+    <div id="characterList" class="card-list"></div>
+  </section>
+
+  <!-- Tab: 章节 -->
+  <section class="tab-content hidden" id="tab-chapters">
+    <div class="section-header"><h2>✍️ 章节</h2><button class="btn-sm btn-primary" id="btnAddChapter">+ 新建章节</button></div>
+    <div id="chapterList" class="card-list"></div>
+  </section>
+
+  <!-- Tab: 世界观 -->
+  <section class="tab-content hidden" id="tab-worldbuilding">
+    <div class="section-header"><h2>🌍 世界观</h2><button class="btn-sm btn-primary" id="btnAddWorldItem">+ 添加条目</button></div>
+    <div class="world-categories">
+      <button class="btn-tag active" data-cat="all">全部</button>
+      <button class="btn-tag" data-cat="location">🗺️ 地点</button>
+      <button class="btn-tag" data-cat="faction">🏰 势力</button>
+      <button class="btn-tag" data-cat="system">⚡ 体系</button>
+      <button class="btn-tag" data-cat="history">📜 历史</button>
+      <button class="btn-tag" data-cat="other">📌 其他</button>
+    </div>
+    <div id="worldList" class="card-list"></div>
+  </section>
+
+  <!-- Tab: 灵感笔记 -->
+  <section class="tab-content hidden" id="tab-notes">
+    <div class="section-header"><h2>💡 灵感</h2><button class="btn-sm btn-primary" id="btnAddNote">+ 新建笔记</button></div>
+    <div id="noteList" class="card-list"></div>
+  </section>
+</main>
+
+<!-- Bottom Nav -->
+<nav class="bottom-nav">
+  <button class="nav-item active" data-tab="outline"><span class="nav-icon">📋</span><span class="nav-label">大纲</span></button>
+  <button class="nav-item" data-tab="characters"><span class="nav-icon">👤</span><span class="nav-label">人物</span></button>
+  <button class="nav-item" data-tab="chapters"><span class="nav-icon">✍️</span><span class="nav-label">章节</span></button>
+  <button class="nav-item" data-tab="worldbuilding"><span class="nav-icon">🌍</span><span class="nav-label">世界观</span></button>
+  <button class="nav-item" data-tab="notes"><span class="nav-icon">💡</span><span class="nav-label">灵感</span></button>
+</nav>
+
+<!-- Character Modal -->
+<div class="modal-overlay hidden" id="modalCharacter"><div class="modal">
+<div class="modal-header"><h3 id="modalCharacterTitle">添加人物</h3><button class="btn-icon modal-close" data-modal="modalCharacter">✕</button></div>
+<div class="modal-body">
+<input type="hidden" id="charId">
+<div class="form-group"><label>姓名 *</label><input type="text" id="charName" placeholder="人物姓名"></div>
+<div class="form-row">
+<div class="form-group flex-1"><label>角色定位</label><select id="charRole"><option value="">请选择</option><option value="protagonist">主角</option><option value="antagonist">反派</option><option value="supporting">配角</option><option value="mentor">导师</option><option value="love_interest">恋爱对象</option><option value="comic_relief">搞笑担当</option><option value="other">其他</option></select></div>
+<div class="form-group flex-1"><label>年龄</label><input type="text" id="charAge" placeholder="年龄"></div>
+</div>
+<div class="form-group"><label>性格标签（用逗号分隔）</label><input type="text" id="charTraits" placeholder="如：勇敢, 聪明, 冲动"></div>
+<div class="form-group"><label>外貌描写</label><textarea id="charAppearance" rows="2" placeholder="外貌特征..."></textarea></div>
+<div class="form-group"><label>背景故事</label><textarea id="charBackground" rows="3" placeholder="人物背景..."></textarea></div>
+<div class="form-group"><label>备注</label><textarea id="charNotes" rows="2" placeholder="其他备注..."></textarea></div>
+</div>
+<div class="modal-footer"><button class="btn-danger" id="btnDeleteChar" style="display:none">删除</button><button class="btn-primary" id="btnSaveChar">保存</button></div>
+</div></div>
+
+<!-- Chapter Modal -->
+<div class="modal-overlay hidden" id="modalChapter"><div class="modal modal-full">
+<div class="modal-header"><h3 id="modalChapterTitle">新建章节</h3><button class="btn-icon modal-close" data-modal="modalChapter">✕</button></div>
+<div class="modal-body">
+<input type="hidden" id="chapterId">
+<div class="form-group"><label>章节标题 *</label><input type="text" id="chapterTitle" placeholder="章节标题"></div>
+<div class="form-row">
+<div class="form-group flex-1"><label>状态</label><select id="chapterStatus"><option value="outline">大纲中</option><option value="drafting">写作中</option><option value="revising">修改中</option><option value="done">已完成</option></select></div>
+<div class="form-group flex-1"><label>字数</label><span id="chapterWordCount" class="word-count">0</span></div>
+</div>
+<div class="form-group"><label>摘要</label><textarea id="chapterSummary" rows="2" placeholder="本章摘要..."></textarea></div>
+<div class="form-group"><label>正文</label><textarea id="chapterContent" rows="15" placeholder="开始写作..."></textarea></div>
+</div>
+<div class="modal-footer"><button class="btn-danger" id="btnDeleteChapter" style="display:none">删除</button><button class="btn-primary" id="btnSaveChapter">保存</button></div>
+</div></div>
+
+<!-- Worldbuilding Modal -->
+<div class="modal-overlay hidden" id="modalWorldItem"><div class="modal">
+<div class="modal-header"><h3 id="modalWorldTitle">添加条目</h3><button class="btn-icon modal-close" data-modal="modalWorldItem">✕</button></div>
+<div class="modal-body">
+<input type="hidden" id="worldId">
+<div class="form-group"><label>名称 *</label><input type="text" id="worldName" placeholder="条目名称"></div>
+<div class="form-group"><label>类别</label><select id="worldCategory"><option value="location">🗺️ 地点</option><option value="faction">🏰 势力</option><option value="system">⚡ 体系</option><option value="history">📜 历史</option><option value="other">📌 其他</option></select></div>
+<div class="form-group"><label>描述</label><textarea id="worldDescription" rows="4" placeholder="详细描述..."></textarea></div>
+</div>
+<div class="modal-footer"><button class="btn-danger" id="btnDeleteWorld" style="display:none">删除</button><button class="btn-primary" id="btnSaveWorld">保存</button></div>
+</div></div>
+
+<!-- Note Modal -->
+<div class="modal-overlay hidden" id="modalNote"><div class="modal">
+<div class="modal-header"><h3 id="modalNoteTitle">新建笔记</h3><button class="btn-icon modal-close" data-modal="modalNote">✕</button></div>
+<div class="modal-body">
+<input type="hidden" id="noteId">
+<div class="form-group"><label>标题 *</label><input type="text" id="noteTitle" placeholder="笔记标题..."></div>
+<div class="form-group"><label>来源 / 标签</label><input type="text" id="noteSource" placeholder="如：Gemini生成、自己的灵感、读书笔记..."></div>
+<div class="form-group"><label>内容</label><textarea id="noteContent" rows="8" placeholder="在这里粘贴 Gemini 生成的大纲、人物设定，或写下你的灵感..."></textarea></div>
+</div>
+<div class="modal-footer"><button class="btn-danger" id="btnDeleteNote" style="display:none">删除</button><button class="btn-primary" id="btnSaveNote">保存</button></div>
+</div></div>
+
+<!-- Act Modal -->
+<div class="modal-overlay hidden" id="modalAct"><div class="modal">
+<div class="modal-header"><h3 id="modalActTitle">编辑幕</h3><button class="btn-icon modal-close" data-modal="modalAct">✕</button></div>
+<div class="modal-body">
+<input type="hidden" id="actId">
+<div class="form-group"><label>幕名 *</label><input type="text" id="actName" placeholder="如：第一幕、序章、上篇..."></div>
+<div class="form-group"><label>描述</label><textarea id="actDescription" rows="3" placeholder="这一部分的主要内容..."></textarea></div>
+</div>
+<div class="modal-footer"><button class="btn-danger" id="btnDeleteAct" style="display:none">删除</button><button class="btn-primary" id="btnSaveAct">保存</button></div>
+</div></div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay hidden" id="modalSettings"><div class="modal">
+<div class="modal-header"><h3>⚙️ 设置</h3><button class="btn-icon modal-close" data-modal="modalSettings">✕</button></div>
+<div class="modal-body">
+<p style="color:var(--text-secondary);font-size:13px;margin-bottom:16px">数据使用 IndexedDB + localStorage 双保险存储，保存在手机浏览器本地。切换应用或关闭浏览器不会丢失。换手机或清除浏览器数据前记得导出备份。</p>
+<p style="color:var(--text-secondary);font-size:13px;margin-bottom:16px"><b>💡 最佳体验：</b>将此页面部署到 GitHub Pages（免费），获得一个永久网址。然后用 Chrome 打开网址，菜单 →「添加到主屏幕」，即可像 App 一样使用，再也不会找不到。详见 <a href="https://pages.github.com" target="_blank">pages.github.com</a></p>
+<div class="form-group">
+  <label>数据管理</label>
+  <div class="btn-row"><button class="btn-sm" id="btnExport">📤 导出备份</button><button class="btn-sm" id="btnImport">📥 导入备份</button></div>
+  <input type="file" id="importFile" accept=".json" style="display:none">
+</div>
+<button class="btn-danger btn-full" id="btnClearData">🗑️ 清除所有数据</button>
+</div>
+</div></div>
+
+<!-- Confirm Dialog -->
+<div class="modal-overlay hidden" id="modalConfirm"><div class="modal modal-sm">
+<div class="modal-body"><p id="confirmMessage"></p></div>
+<div class="modal-footer"><button class="btn-sm" id="btnConfirmCancel">取消</button><button class="btn-danger" id="btnConfirmOk">确认</button></div>
+</div></div>
+
+<script>
+/* ===== Storage: IndexedDB + localStorage 双保险 ===== */
+const Storage={
+  _db:null,
+  _ready:false,
+
+  async init(){
+    return new Promise((resolve,reject)=>{
+      const req=indexedDB.open('moyun_db',1);
+      req.onupgradeneeded=e=>{const db=e.target.result;if(!db.objectStoreNames.contains('state'))db.createObjectStore('state');};
+      req.onsuccess=e=>{this._db=e.target.result;this._ready=true;resolve();};
+      req.onerror=()=>{this._ready=false;resolve();};
+    });
+  },
+
+  load(){
+    if(!this._ready||!this._db){
+      try{const s=localStorage.getItem('moyun_backup');if(s) return JSON.parse(s);}catch(e){}
+      return null;
+    }
+    return new Promise((resolve)=>{
+      try{
+        const tx=this._db.transaction('state','readonly');
+        const req=tx.objectStore('state').get('app_data');
+        req.onsuccess=()=>{
+          if(req.result) resolve(JSON.parse(req.result));
+          else{try{const s=localStorage.getItem('moyun_backup');resolve(s?JSON.parse(s):null);}catch(e){resolve(null);}}
+        };
+        req.onerror=()=>{try{const s=localStorage.getItem('moyun_backup');resolve(s?JSON.parse(s):null);}catch(e){resolve(null);}};
+      }catch(e){resolve(null);}
+    });
+  },
+
+  save(data){
+    const json=JSON.stringify(data);
+    localStorage.setItem('moyun_backup',json);
+    if(!this._ready||!this._db) return;
+    try{
+      const tx=this._db.transaction('state','readwrite');
+      tx.objectStore('state').put(json,'app_data');
+    }catch(e){}
+  },
+
+  clear(){
+    if(this._ready&&this._db){
+      try{const tx=this._db.transaction('state','readwrite');tx.objectStore('state').delete('app_data');}catch(e){}
+    }
+    localStorage.removeItem('moyun_backup');
+  }
+};
+
+const App={
+  data:{
+    novel:{title:'',genre:'',premise:''},
+    acts:[],
+    characters:[],
+    chapters:[],
+    worldItems:[],
+    notes:[],
+  },
+  currentTab:'outline',
+  worldFilter:'all',
+  confirmCallback:null,
+  _saveTimer:null,
+
+  async init(){
+    await Storage.init();
+    const saved=await Storage.load();
+    if(saved) this.data=saved;
+    this.bindEvents();
+    this.renderAll();
+    this._showStatus('saved');
+  },
+
+  loadData(){
+    // Kept for sync compatibility, actual loading is async in init()
+  },
+
+  saveData(){
+    Storage.save(this.data);
+    this._showStatus('saving');
+    clearTimeout(this._saveTimer);
+    this._saveTimer=setTimeout(()=>this._showStatus('saved'),600);
+  },
+
+  _showStatus(state){
+    const dot=document.getElementById('statusDot');
+    const txt=document.getElementById('statusText');
+    if(!dot||!txt) return;
+    dot.className='status-dot '+state;
+    if(state==='saved') txt.textContent='已保存';
+    else if(state==='saving') txt.textContent='保存中';
+  },
+
+  bindEvents(){
+    document.querySelectorAll('.nav-item').forEach(b=>b.addEventListener('click',()=>this.switchTab(b.dataset.tab)));
+    document.getElementById('btnSettings').addEventListener('click',()=>this.openModal('modalSettings'));
+    document.getElementById('btnSaveNovelInfo').addEventListener('click',()=>this.saveNovelInfo());
+    // Auto-save novel info on input
+    ['novelTitle','novelGenre','novelPremise'].forEach(id=>{
+      document.getElementById(id).addEventListener('input',()=>{this.data.novel.title=document.getElementById('novelTitle').value.trim();this.data.novel.genre=document.getElementById('novelGenre').value.trim();this.data.novel.premise=document.getElementById('novelPremise').value.trim();this.saveData();});
+    });
+    // Auto-save chapter content every 5s
+    let chapterAutoSave=null;
+    document.getElementById('chapterContent').addEventListener('input',()=>{this.updateWordCount();clearTimeout(chapterAutoSave);chapterAutoSave=setTimeout(()=>this._autoSaveChapter(),3000);});
+    document.getElementById('btnAddAct').addEventListener('click',()=>this.openActModal());
+    document.getElementById('btnSaveAct').addEventListener('click',()=>this.saveAct());
+    document.getElementById('btnDeleteAct').addEventListener('click',()=>this.deleteAct());
+    document.getElementById('btnAddCharacter').addEventListener('click',()=>this.openCharacterModal());
+    document.getElementById('btnSaveChar').addEventListener('click',()=>this.saveCharacter());
+    document.getElementById('btnDeleteChar').addEventListener('click',()=>this.deleteCharacter());
+    document.getElementById('btnAddChapter').addEventListener('click',()=>this.openChapterModal());
+    document.getElementById('btnSaveChapter').addEventListener('click',()=>this.saveChapter());
+    document.getElementById('btnDeleteChapter').addEventListener('click',()=>this.deleteChapter());
+    document.getElementById('chapterContent').addEventListener('input',()=>this.updateWordCount());
+    document.getElementById('btnAddWorldItem').addEventListener('click',()=>this.openWorldModal());
+    document.getElementById('btnSaveWorld').addEventListener('click',()=>this.saveWorldItem());
+    document.getElementById('btnDeleteWorld').addEventListener('click',()=>this.deleteWorldItem());
+    document.querySelectorAll('.btn-tag').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.btn-tag').forEach(x=>x.classList.remove('active'));b.classList.add('active');this.worldFilter=b.dataset.cat;this.renderWorldList();}));
+    document.getElementById('btnAddNote').addEventListener('click',()=>this.openNoteModal());
+    document.getElementById('btnSaveNote').addEventListener('click',()=>this.saveNote());
+    document.getElementById('btnDeleteNote').addEventListener('click',()=>this.deleteNote());
+    document.getElementById('btnExport').addEventListener('click',()=>this.exportData());
+    document.getElementById('btnImport').addEventListener('click',()=>document.getElementById('importFile').click());
+    document.getElementById('importFile').addEventListener('change',e=>this.importData(e));
+    document.getElementById('btnClearData').addEventListener('click',()=>this.confirmClearData());
+    document.getElementById('btnConfirmOk').addEventListener('click',()=>{if(this.confirmCallback)this.confirmCallback();this.closeModal('modalConfirm');});
+    document.getElementById('btnConfirmCancel').addEventListener('click',()=>this.closeModal('modalConfirm'));
+    document.querySelectorAll('.modal-close').forEach(b=>b.addEventListener('click',()=>this.closeModal(b.dataset.modal)));
+    document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)this.closeModal(o.id);}));
+  },
+
+  switchTab(tab){
+    this.currentTab=tab;
+    document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+    document.querySelector(`.nav-item[data-tab="${tab}"]`).classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(t=>t.classList.add('hidden'));
+    document.getElementById(`tab-${tab}`).classList.remove('hidden');
+    if(tab==='outline')this.renderOutline();
+    else if(tab==='characters')this.renderCharacterList();
+    else if(tab==='chapters')this.renderChapterList();
+    else if(tab==='worldbuilding')this.renderWorldList();
+    else if(tab==='notes')this.renderNoteList();
+  },
+  renderAll(){this.renderOutline();this.loadNovelInfo();},
+
+  /* ========== 小说信息 ========== */
+  loadNovelInfo(){
+    document.getElementById('novelTitle').value=this.data.novel.title||'';
+    document.getElementById('novelGenre').value=this.data.novel.genre||'';
+    document.getElementById('novelPremise').value=this.data.novel.premise||'';
+  },
+  saveNovelInfo(){
+    this.data.novel.title=document.getElementById('novelTitle').value.trim();
+    this.data.novel.genre=document.getElementById('novelGenre').value.trim();
+    this.data.novel.premise=document.getElementById('novelPremise').value.trim();
+    this.saveData();this.toast('小说信息已保存');
+  },
+
+  /* ========== 大纲 ========== */
+  renderOutline(){
+    const c=document.getElementById('outlineActs');
+    if(!this.data.acts.length){c.innerHTML='<div class="empty-state"><div class="icon">📋</div><p>还没有大纲<br>点击「添加幕」开始构建你的故事结构</p></div>';return;}
+    c.innerHTML=this.data.acts.map((a,ai)=>`<div class="act-card"><div class="act-header" onclick="App.toggleAct(this)"><div class="act-header-left"><span style="color:var(--text-muted);font-size:14px">▸</span><div><h4>${this.esc(a.name)}</h4>${a.description?`<div class="act-desc">${this.esc(a.description)}</div>`:''}</div></div><div class="act-header-actions"><button class="btn-sm" onclick="event.stopPropagation();App.addChapter(${ai})" title="添加章节">+</button><button class="btn-sm" onclick="event.stopPropagation();App.openActModal(${ai})" title="编辑">✎</button></div></div><div class="act-body">${!a.chapters?.length?'<div style="color:var(--text-muted);font-size:13px;padding:8px 0">暂无章节，点击 + 添加</div>':''}${(a.chapters||[]).map((ch,ci)=>`<div class="chapter-inline" onclick="App.openChapterFromOutline(${ai},${ci})"><span class="chapter-num">Ch${ci+1}</span><div class="chapter-info"><div class="title">${this.esc(ch.title||'未命名章节')}</div>${ch.summary?`<div class="summary">${this.esc(ch.summary)}</div>`:''}</div></div>`).join('')}</div></div>`).join('');
+  },
+  toggleAct(h){const b=h.nextElementSibling,s=h.querySelector('span');if(b.style.display==='none'){b.style.display='block';s.textContent='▾';}else{b.style.display='none';s.textContent='▸';}},
+  openActModal(idx){
+    const a=idx!==undefined?this.data.acts[idx]:null;
+    document.getElementById('modalActTitle').textContent=a?'编辑幕':'添加幕';
+    document.getElementById('actId').value=idx!==undefined?idx:'';
+    document.getElementById('actName').value=a?a.name:'';
+    document.getElementById('actDescription').value=a?(a.description||''):'';
+    document.getElementById('btnDeleteAct').style.display=a?'':'none';
+    this.openModal('modalAct');
+  },
+  saveAct(){
+    const idx=document.getElementById('actId').value;
+    const name=document.getElementById('actName').value.trim();
+    if(!name) return this.toast('请输入幕名');
+    const d={id:idx!==''?this.data.acts[idx].id:Date.now().toString(),name,description:document.getElementById('actDescription').value.trim(),chapters:idx!==''?this.data.acts[idx].chapters:[]};
+    if(idx!=='') this.data.acts[idx]={...this.data.acts[idx],...d};
+    else this.data.acts.push(d);
+    this.saveData();this.closeModal('modalAct');this.renderOutline();
+  },
+  deleteAct(){
+    const idx=parseInt(document.getElementById('actId').value);
+    this.confirm('确定要删除这一整幕及其所有章节吗？',()=>{this.data.acts.splice(idx,1);this.saveData();this.closeModal('modalAct');this.renderOutline();});
+  },
+  addChapter(actIdx){this.openChapterModal(null,actIdx);},
+  openChapterFromOutline(actIdx,chIdx){
+    const existingIdx=this.data.chapters.findIndex(c=>c.outlineRef===`${actIdx}:${chIdx}`);
+    if(existingIdx>=0) this.openChapterModal(existingIdx);
+    else this.openChapterModal(null,actIdx,chIdx);
+  },
+
+  /* ========== 人物 ========== */
+  renderCharacterList(){
+    const c=document.getElementById('characterList');
+    if(!this.data.characters.length){c.innerHTML='<div class="empty-state"><div class="icon">👤</div><p>还没有人物<br>点击「添加人物」创建你的角色</p></div>';return;}
+    const rl={protagonist:'主角',antagonist:'反派',supporting:'配角',mentor:'导师',love_interest:'恋爱对象',comic_relief:'搞笑担当',other:'其他'};
+    c.innerHTML=this.data.characters.map((ch,i)=>`<div class="card-item" onclick="App.openCharacterModal(${i})"><div class="card-item-title">${ch.name||'未命名'}${ch.role?`<span class="tag tag-primary">${rl[ch.role]||ch.role}</span>`:''}</div>${ch.traits?`<div class="card-item-meta">${ch.traits.split(/[,，]/).filter(Boolean).map(t=>`<span class="tag">${this.esc(t.trim())}</span>`).join('')}</div>`:''}${ch.background?`<div class="card-item-sub">${this.esc(ch.background.slice(0,80))}${ch.background.length>80?'...':''}</div>`:''}</div>`).join('');
+  },
+  openCharacterModal(idx){
+    const c=idx!==undefined?this.data.characters[idx]:null;
+    document.getElementById('modalCharacterTitle').textContent=c?'编辑人物':'添加人物';
+    document.getElementById('charId').value=idx!==undefined?idx:'';
+    document.getElementById('charName').value=c?c.name:'';
+    document.getElementById('charRole').value=c?(c.role||''):'';
+    document.getElementById('charAge').value=c?(c.age||''):'';
+    document.getElementById('charTraits').value=c?(c.traits||''):'';
+    document.getElementById('charAppearance').value=c?(c.appearance||''):'';
+    document.getElementById('charBackground').value=c?(c.background||''):'';
+    document.getElementById('charNotes').value=c?(c.notes||''):'';
+    document.getElementById('btnDeleteChar').style.display=c?'':'none';
+    this.openModal('modalCharacter');
+  },
+  saveCharacter(){
+    const idx=document.getElementById('charId').value;
+    const name=document.getElementById('charName').value.trim();
+    if(!name) return this.toast('请输入人物姓名');
+    const d={id:idx!==''?this.data.characters[idx].id:Date.now().toString(),name,role:document.getElementById('charRole').value,age:document.getElementById('charAge').value.trim(),traits:document.getElementById('charTraits').value.trim(),appearance:document.getElementById('charAppearance').value.trim(),background:document.getElementById('charBackground').value.trim(),notes:document.getElementById('charNotes').value.trim(),updatedAt:new Date().toISOString()};
+    if(idx!=='') this.data.characters[idx]=d;
+    else{d.createdAt=new Date().toISOString();this.data.characters.push(d);}
+    this.saveData();this.closeModal('modalCharacter');this.renderCharacterList();this.toast('人物已保存');
+  },
+  deleteCharacter(){
+    const idx=parseInt(document.getElementById('charId').value);
+    this.confirm('确定要删除这个人物吗？',()=>{this.data.characters.splice(idx,1);this.saveData();this.closeModal('modalCharacter');this.renderCharacterList();});
+  },
+
+  /* ========== 章节 ========== */
+  renderChapterList(){
+    const c=document.getElementById('chapterList');
+    const all=this.data.chapters;
+    if(!all.length){c.innerHTML='<div class="empty-state"><div class="icon">✍️</div><p>还没有章节<br>点击「新建章节」开始写作</p></div>';return;}
+    const sl={outline:'大纲中',drafting:'写作中',revising:'修改中',done:'已完成'};
+    const sc={outline:'',drafting:'tag-primary',revising:'',done:'tag-primary'};
+    c.innerHTML=all.map((ch,i)=>`<div class="card-item" onclick="App.openChapterModal(${i})"><div class="card-item-title">${this.esc(ch.title||'未命名章节')}<span class="tag ${sc[ch.status]||''}">${sl[ch.status]||'大纲中'}</span></div>${ch.summary?`<div class="card-item-sub">${this.esc(ch.summary)}</div>`:''}<div class="card-item-meta"><span class="tag">${ch.wordCount||0} 字</span><span class="tag">${new Date(ch.updatedAt||ch.createdAt).toLocaleDateString('zh-CN')}</span></div></div>`).join('');
+  },
+  openChapterModal(idx,actIdx,chIdx){
+    const ch=idx!==undefined&&idx<this.data.chapters.length?this.data.chapters[idx]:null;
+    document.getElementById('modalChapterTitle').textContent=ch?'编辑章节':'新建章节';
+    document.getElementById('chapterId').value=idx!==undefined?idx:'';
+    if(actIdx!==undefined&&chIdx!==undefined&&!ch){
+      const oc=this.data.acts[actIdx]?.chapters?.[chIdx];
+      document.getElementById('chapterTitle').value=oc?.title||'';
+      document.getElementById('chapterSummary').value=oc?.summary||'';
+      document.getElementById('chapterContent').value='';
+      document.getElementById('chapterStatus').value='outline';
+      document.getElementById('chapterId').dataset.outlineRef=`${actIdx}:${chIdx}`;
+    }else if(ch){
+      document.getElementById('chapterTitle').value=ch.title||'';
+      document.getElementById('chapterSummary').value=ch.summary||'';
+      document.getElementById('chapterContent').value=ch.content||'';
+      document.getElementById('chapterStatus').value=ch.status||'outline';
+      document.getElementById('chapterId').dataset.outlineRef=ch.outlineRef||'';
+    }else{
+      document.getElementById('chapterTitle').value='';document.getElementById('chapterSummary').value='';
+      document.getElementById('chapterContent').value='';document.getElementById('chapterStatus').value='outline';
+      document.getElementById('chapterId').dataset.outlineRef='';
+    }
+    document.getElementById('btnDeleteChapter').style.display=ch?'':'none';
+    this.updateWordCount();this.openModal('modalChapter');
+  },
+  updateWordCount(){
+    const c=document.getElementById('chapterContent').value;
+    const cc=(c.match(/[一-鿿]/g)||[]).length;
+    const w=(c.match(/[a-zA-Z0-9]+/g)||[]).length;
+    document.getElementById('chapterWordCount').textContent=cc+w;
+  },
+  _autoSaveChapter(){
+    const idxStr=document.getElementById('chapterId').value;
+    if(idxStr==='') return; // Only auto-save existing chapters
+    const content=document.getElementById('chapterContent').value;
+    const title=document.getElementById('chapterTitle').value.trim();
+    if(!title) return;
+    const cc=(content.match(/[一-鿿]/g)||[]).length;
+    const w=(content.match(/[a-zA-Z0-9]+/g)||[]).length;
+    this.data.chapters[idxStr].title=title;
+    this.data.chapters[idxStr].content=content;
+    this.data.chapters[idxStr].summary=document.getElementById('chapterSummary').value.trim();
+    this.data.chapters[idxStr].status=document.getElementById('chapterStatus').value;
+    this.data.chapters[idxStr].wordCount=cc+w;
+    this.data.chapters[idxStr].updatedAt=new Date().toISOString();
+    this.saveData();
+  },
+
+  saveChapter(){
+    const idxStr=document.getElementById('chapterId').value;
+    const title=document.getElementById('chapterTitle').value.trim();
+    if(!title) return this.toast('请输入章节标题');
+    const content=document.getElementById('chapterContent').value;
+    const cc=(content.match(/[一-鿿]/g)||[]).length;
+    const w=(content.match(/[a-zA-Z0-9]+/g)||[]).length;
+    const d={id:idxStr!==''?this.data.chapters[idxStr].id:Date.now().toString(),title,summary:document.getElementById('chapterSummary').value.trim(),content,status:document.getElementById('chapterStatus').value,wordCount:cc+w,outlineRef:document.getElementById('chapterId').dataset.outlineRef||'',updatedAt:new Date().toISOString()};
+    if(idxStr!=='') this.data.chapters[idxStr]=d;
+    else{d.createdAt=new Date().toISOString();this.data.chapters.push(d);}
+    this.saveData();this.closeModal('modalChapter');this.renderChapterList();this.toast('章节已保存');
+  },
+  deleteChapter(){
+    const idx=parseInt(document.getElementById('chapterId').value);
+    this.confirm('确定要删除这个章节吗？',()=>{this.data.chapters.splice(idx,1);this.saveData();this.closeModal('modalChapter');this.renderChapterList();});
+  },
+
+  /* ========== 世界观 ========== */
+  renderWorldList(){
+    const c=document.getElementById('worldList');
+    const items=this.worldFilter==='all'?this.data.worldItems:this.data.worldItems.filter(w=>w.category===this.worldFilter);
+    if(!items.length){c.innerHTML='<div class="empty-state"><div class="icon">🌍</div><p>还没有世界观条目<br>点击「添加条目」构建你的世界</p></div>';return;}
+    const ci={location:'🗺️',faction:'🏰',system:'⚡',history:'📜',other:'📌'};
+    const cl={location:'地点',faction:'势力',system:'体系',history:'历史',other:'其他'};
+    c.innerHTML=items.map(w=>{const ri=this.data.worldItems.indexOf(w);return`<div class="card-item" onclick="App.openWorldModal(${ri})"><div class="card-item-title">${ci[w.category]||'📌'} ${this.esc(w.name||'未命名')}<span class="tag">${cl[w.category]||w.category}</span></div>${w.description?`<div class="card-item-sub">${this.esc(w.description.slice(0,100))}${w.description.length>100?'...':''}</div>`:''}</div>`;}).join('');
+  },
+  openWorldModal(idx){
+    const w=idx!==undefined?this.data.worldItems[idx]:null;
+    document.getElementById('modalWorldTitle').textContent=w?'编辑条目':'添加条目';
+    document.getElementById('worldId').value=idx!==undefined?idx:'';
+    document.getElementById('worldName').value=w?w.name:'';
+    document.getElementById('worldCategory').value=w?(w.category||'location'):'location';
+    document.getElementById('worldDescription').value=w?(w.description||''):'';
+    document.getElementById('btnDeleteWorld').style.display=w?'':'none';
+    this.openModal('modalWorldItem');
+  },
+  saveWorldItem(){
+    const idx=document.getElementById('worldId').value;
+    const name=document.getElementById('worldName').value.trim();
+    if(!name) return this.toast('请输入条目名称');
+    const d={id:idx!==''?this.data.worldItems[idx].id:Date.now().toString(),name,category:document.getElementById('worldCategory').value,description:document.getElementById('worldDescription').value.trim(),updatedAt:new Date().toISOString()};
+    if(idx!=='') this.data.worldItems[idx]=d;
+    else{d.createdAt=new Date().toISOString();this.data.worldItems.push(d);}
+    this.saveData();this.closeModal('modalWorldItem');this.renderWorldList();this.toast('条目已保存');
+  },
+  deleteWorldItem(){
+    const idx=parseInt(document.getElementById('worldId').value);
+    this.confirm('确定要删除这个条目吗？',()=>{this.data.worldItems.splice(idx,1);this.saveData();this.closeModal('modalWorldItem');this.renderWorldList();});
+  },
+
+  /* ========== 灵感笔记 ========== */
+  renderNoteList(){
+    const c=document.getElementById('noteList');
+    if(!this.data.notes.length){c.innerHTML='<div class="empty-state"><div class="icon">💡</div><p>还没有灵感笔记<br>把 Gemini 生成的内容粘贴到这里<br>或者随手记下突发的灵感</p></div>';return;}
+    c.innerHTML=this.data.notes.map((n,i)=>`<div class="card-item note-card" onclick="App.openNoteModal(${i})"><div class="card-item-title">${this.esc(n.title||'未命名笔记')}</div>${n.content?`<div class="note-body">${this.esc(n.content.slice(0,150))}${n.content.length>150?'...':''}</div>`:''}<div class="card-item-meta">${n.source?`<span class="tag tag-primary">${this.esc(n.source)}</span>`:''}<span class="tag">${new Date(n.updatedAt||n.createdAt).toLocaleDateString('zh-CN')}</span></div></div>`).join('');
+  },
+  openNoteModal(idx){
+    const n=idx!==undefined?this.data.notes[idx]:null;
+    document.getElementById('modalNoteTitle').textContent=n?'编辑笔记':'新建笔记';
+    document.getElementById('noteId').value=idx!==undefined?idx:'';
+    document.getElementById('noteTitle').value=n?n.title:'';
+    document.getElementById('noteSource').value=n?(n.source||''):'';
+    document.getElementById('noteContent').value=n?n.content:'';
+    document.getElementById('btnDeleteNote').style.display=n?'':'none';
+    this.openModal('modalNote');
+  },
+  saveNote(){
+    const idx=document.getElementById('noteId').value;
+    const title=document.getElementById('noteTitle').value.trim();
+    if(!title) return this.toast('请输入笔记标题');
+    const d={id:idx!==''?this.data.notes[idx].id:Date.now().toString(),title,source:document.getElementById('noteSource').value.trim(),content:document.getElementById('noteContent').value,updatedAt:new Date().toISOString()};
+    if(idx!=='') this.data.notes[idx]=d;
+    else{d.createdAt=new Date().toISOString();this.data.notes.push(d);}
+    this.saveData();this.closeModal('modalNote');this.renderNoteList();this.toast('笔记已保存');
+  },
+  deleteNote(){
+    const idx=parseInt(document.getElementById('noteId').value);
+    this.confirm('确定要删除这个笔记吗？',()=>{this.data.notes.splice(idx,1);this.saveData();this.closeModal('modalNote');this.renderNoteList();});
+  },
+
+  /* ========== 数据管理 ========== */
+  exportData(){
+    const ed={...this.data,exportedAt:new Date().toISOString(),version:1};
+    const blob=new Blob([JSON.stringify(ed,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=`墨韵_备份_${new Date().toISOString().slice(0,10)}.json`;a.click();
+    URL.revokeObjectURL(url);this.toast('数据已导出');
+  },
+  importData(e){
+    const file=e.target.files[0];if(!file) return;
+    const reader=new FileReader();
+    reader.onload=()=>{try{const im=JSON.parse(reader.result);if(!im.version) throw new Error('无效');this.data.novel=im.novel||{title:'',genre:'',premise:''};this.data.acts=im.acts||[];this.data.characters=im.characters||[];this.data.chapters=im.chapters||[];this.data.worldItems=im.worldItems||[];this.data.notes=im.notes||[];this.saveData();this.loadNovelInfo();this.renderAll();this.toast('数据已导入');}catch(er){this.toast('导入失败：无效的备份文件');}};
+    reader.readAsText(file);e.target.value='';
+  },
+  confirmClearData(){
+    this.confirm('确定要清除所有数据吗？此操作不可撤销！建议先导出备份。',()=>{this.data={novel:{title:'',genre:'',premise:''},acts:[],characters:[],chapters:[],worldItems:[],notes:[]};this.saveData();Storage.clear();this.loadNovelInfo();this.renderAll();this.toast('所有数据已清除');});
+  },
+
+  /* ========== 通用 ========== */
+  openModal(id){document.getElementById(id).classList.remove('hidden');},
+  closeModal(id){document.getElementById(id).classList.add('hidden');},
+  confirm(msg,cb){document.getElementById('confirmMessage').textContent=msg;this.confirmCallback=cb;this.openModal('modalConfirm');},
+  esc(s){if(!s) return '';const d=document.createElement('div');d.textContent=s;return d.innerHTML;},
+  toast(m){const ex=document.querySelector('.toast');if(ex)ex.remove();const el=document.createElement('div');el.className='toast';el.textContent=m;document.body.appendChild(el);setTimeout(()=>el.remove(),2200);}
+};
+document.addEventListener('DOMContentLoaded',()=>App.init());
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
+</script>
+</body>
+</html>
