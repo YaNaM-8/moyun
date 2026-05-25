@@ -82,6 +82,19 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 .note-card .card-item-title{font-size:15px}
 .note-body{font-size:13px;color:var(--text-secondary);line-height:1.7;white-space:pre-wrap;margin-top:6px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .note-card .card-item-meta .tag{font-size:10px}
+/* AI Tab */
+.ai-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.btn-ai-action{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;font-size:14px;color:var(--text);cursor:pointer;transition:all .2s;text-align:center}
+.btn-ai-action:active{border-color:var(--primary);background:rgba(226,176,74,.1)}
+.ai-custom{background:var(--card);border-radius:var(--radius);padding:12px;border:1px solid var(--border);margin-bottom:12px}
+.ai-custom textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;color:var(--text);resize:vertical;margin-bottom:10px}
+.ai-custom textarea:focus{outline:none;border-color:var(--primary)}
+.ai-response{margin-bottom:12px;background:var(--card);border-radius:var(--radius);border:1px solid var(--primary);overflow:hidden}
+.ai-response-header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(226,176,74,.1);font-weight:600;font-size:14px}
+.ai-response-content{padding:14px;font-size:14px;line-height:1.8;max-height:300px;overflow-y:auto;white-space:pre-wrap}
+.ai-view-tabs{display:flex;gap:8px;margin-bottom:12px}
+.ai-view-tab{flex:1;text-align:center;padding:8px;border-radius:var(--radius-sm);font-size:13px;cursor:pointer;background:var(--border);color:var(--text-secondary);border:none;transition:all .2s}
+.ai-view-tab.active{background:rgba(226,176,74,.2);color:var(--primary)}
 .world-categories{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
 .world-categories::-webkit-scrollbar{display:none}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:flex;align-items:flex-end;justify-content:center;animation:fadeIn .2s ease}
@@ -164,10 +177,34 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
     <div id="worldList" class="card-list"></div>
   </section>
 
-  <!-- Tab: 灵感笔记 -->
-  <section class="tab-content hidden" id="tab-notes">
-    <div class="section-header"><h2>💡 灵感</h2><button class="btn-sm btn-primary" id="btnAddNote">+ 新建笔记</button></div>
-    <div id="noteList" class="card-list"></div>
+  <!-- Tab: AI 助手 -->
+  <section class="tab-content hidden" id="tab-ai">
+    <div class="ai-view-tabs">
+      <button class="ai-view-tab active" data-view="generate">🤖 AI 生成</button>
+      <button class="ai-view-tab" data-view="notes">💡 灵感笔记</button>
+    </div>
+    <div id="aiViewGenerate">
+      <div class="ai-actions">
+        <button class="btn-ai-action" data-action="outline">📋 生成大纲</button>
+        <button class="btn-ai-action" data-action="character">👤 生成人物</button>
+        <button class="btn-ai-action" data-action="chapter">✍️ 章节灵感</button>
+        <button class="btn-ai-action" data-action="worldbuilding">🌍 世界观创意</button>
+        <button class="btn-ai-action" data-action="continue">▶️ 续写</button>
+        <button class="btn-ai-action" data-action="polish">💬 润色文字</button>
+      </div>
+      <div class="ai-custom">
+        <textarea id="aiPrompt" rows="3" placeholder="描述你需要的帮助，AI 将为你生成内容...&#10;也可以直接把需要润色的文字粘贴到这里"></textarea>
+        <button class="btn-primary btn-full" id="btnAiGenerate">✨ 生成</button>
+      </div>
+      <div id="aiResponse" class="ai-response hidden">
+        <div class="ai-response-header"><span>AI 回复</span><div><button class="btn-sm" id="btnAiSaveNote">💾 存为笔记</button><button class="btn-sm" id="btnAiCopy">📋 复制</button><button class="btn-sm" id="btnAiClose">✕</button></div></div>
+        <div id="aiResponseContent" class="ai-response-content"></div>
+      </div>
+    </div>
+    <div id="aiViewNotes" class="hidden">
+      <div class="section-header"><h2>💡 灵感笔记</h2><button class="btn-sm btn-primary" id="btnAddNote">+ 新建笔记</button></div>
+      <div id="noteList" class="card-list"></div>
+    </div>
   </section>
 </main>
 
@@ -177,7 +214,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
   <button class="nav-item" data-tab="characters"><span class="nav-icon">👤</span><span class="nav-label">人物</span></button>
   <button class="nav-item" data-tab="chapters"><span class="nav-icon">✍️</span><span class="nav-label">章节</span></button>
   <button class="nav-item" data-tab="worldbuilding"><span class="nav-icon">🌍</span><span class="nav-label">世界观</span></button>
-  <button class="nav-item" data-tab="notes"><span class="nav-icon">💡</span><span class="nav-label">灵感</span></button>
+  <button class="nav-item" data-tab="ai"><span class="nav-icon">🤖</span><span class="nav-label">AI</span></button>
 </nav>
 
 <!-- Character Modal -->
@@ -253,8 +290,12 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 <div class="modal-overlay hidden" id="modalSettings"><div class="modal">
 <div class="modal-header"><h3>⚙️ 设置</h3><button class="btn-icon modal-close" data-modal="modalSettings">✕</button></div>
 <div class="modal-body">
-<p style="color:var(--text-secondary);font-size:13px;margin-bottom:16px">数据使用 IndexedDB + localStorage 双保险存储，保存在手机浏览器本地。切换应用或关闭浏览器不会丢失。换手机或清除浏览器数据前记得导出备份。</p>
-<p style="color:var(--text-secondary);font-size:13px;margin-bottom:16px"><b>💡 最佳体验：</b>将此页面部署到 GitHub Pages（免费），获得一个永久网址。然后用 Chrome 打开网址，菜单 →「添加到主屏幕」，即可像 App 一样使用，再也不会找不到。详见 <a href="https://pages.github.com" target="_blank">pages.github.com</a></p>
+<p style="color:var(--text-secondary);font-size:13px;margin-bottom:16px">数据使用 IndexedDB + localStorage 双保险存储。换手机或清除浏览器数据前记得导出备份。</p>
+<div class="form-group"><label>AI 服务商</label><select id="settingProvider"><option value="gemini">Gemini（需梯子）</option><option value="deepseek">DeepSeek（直连）</option><option value="qwen">通义千问 Qwen（直连）</option><option value="custom">自定义 OpenAI 兼容</option></select></div>
+<div class="form-group"><label>API Key</label><input type="password" id="settingApiKey" placeholder="输入 API Key..."></div>
+<div class="form-group"><label>模型名称</label><input type="text" id="settingModel" placeholder="如：gemini-2.0-flash / deepseek-chat / qwen-plus"></div>
+<div class="form-group custom-only hidden"><label>自定义 API 地址</label><input type="text" id="settingBaseURL" placeholder="https://api.xxx.com/v1/chat/completions"></div>
+<hr>
 <div class="form-group">
   <label>数据管理</label>
   <div class="btn-row"><button class="btn-sm" id="btnExport">📤 导出备份</button><button class="btn-sm" id="btnImport">📥 导入备份</button></div>
@@ -321,6 +362,74 @@ const Storage={
   }
 };
 
+/* ===== LLM: multi-provider AI ===== */
+const LLM={
+  _providers:{
+    gemini:{name:'Gemini',base:'https://generativelanguage.googleapis.com/v1beta/models',fmt:'gemini',models:['gemini-2.0-flash','gemini-1.5-pro']},
+    deepseek:{name:'DeepSeek',base:'https://api.deepseek.com/v1/chat/completions',fmt:'openai',models:['deepseek-chat','deepseek-reasoner']},
+    qwen:{name:'通义千问',base:'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',fmt:'openai',models:['qwen-turbo','qwen-plus','qwen-max']},
+    custom:{name:'自定义',base:'',fmt:'openai',models:[]},
+  },
+
+  getConfig(){
+    const provider=localStorage.getItem('llm_provider')||'gemini';
+    const apiKey=localStorage.getItem('llm_api_key')||'';
+    const model=localStorage.getItem('llm_model')||'gemini-2.0-flash';
+    let baseURL=this._providers[provider]?.base||'';
+    if(provider==='custom') baseURL=localStorage.getItem('llm_base_url')||'';
+    return {provider,apiKey,model,baseURL,apiFormat:this._providers[provider]?.fmt||'openai'};
+  },
+
+  async chat(prompt,systemPrompt){
+    const cfg=this.getConfig();
+    if(!cfg.apiKey) throw new Error('请先在设置中配置 API Key');
+    if(!cfg.baseURL||(!cfg.baseURL.includes('://'))) throw new Error('请先在设置中配置 API 地址');
+
+    let url,body,headers;
+    if(cfg.apiFormat==='gemini'){
+      url=`${cfg.baseURL}/${cfg.model}:generateContent?key=${cfg.apiKey}`;
+      const contents=[];
+      if(systemPrompt){contents.push({role:'user',parts:[{text:systemPrompt}]});contents.push({role:'model',parts:[{text:'好的，请告诉我具体需要什么。'}]});}
+      contents.push({role:'user',parts:[{text:prompt}]});
+      body=JSON.stringify({contents,generationConfig:{temperature:0.9,topP:0.95,maxOutputTokens:8192},safetySettings:[{category:'HARM_CATEGORY_HARASSMENT',threshold:'BLOCK_NONE'},{category:'HARM_CATEGORY_HATE_SPEECH',threshold:'BLOCK_NONE'},{category:'HARM_CATEGORY_SEXUALLY_EXPLICIT',threshold:'BLOCK_NONE'},{category:'HARM_CATEGORY_DANGEROUS_CONTENT',threshold:'BLOCK_NONE'}]});
+      headers={'Content-Type':'application/json'};
+    }else{
+      url=cfg.baseURL;
+      const messages=[];
+      if(systemPrompt) messages.push({role:'system',content:systemPrompt});
+      messages.push({role:'user',content:prompt});
+      body=JSON.stringify({model:cfg.model,messages,temperature:0.9,max_tokens:8192});
+      headers={'Content-Type':'application/json','Authorization':'Bearer '+cfg.apiKey};
+    }
+
+    const res=await fetch(url,{method:'POST',headers,body});
+    if(!res.ok){const err=await res.json().catch(()=>({}));throw new Error(err.error?.message||err.message||`请求失败 (${res.status})`);}
+    const data=await res.json();
+    if(cfg.apiFormat==='gemini') return data.candidates?.[0]?.content?.parts?.[0]?.text||'';
+    return data.choices?.[0]?.message?.content||'';
+  },
+
+  async outline(premise,genre,title){
+    return this.chat(`请为以下小说创作一份详细的大纲：\n\n书名：《${title||'未定'}》\n类型：${genre||'未指定'}\n核心设定：${premise||'未提供'}\n\n请按以下结构输出大纲：\n1. **故事主线**（一段话概括整个故事）\n2. **三幕结构**（每幕含3-5章，写出标题和一句话摘要）\n3. **关键转折点**（至少3个重要的剧情转折）\n4. **主题与寓意**`,'你是一位资深的小说编辑和写作顾问，擅长构建引人入胜的故事结构。请用中文回复。');
+  },
+  async character(premise,genre,existing){
+    const extra=existing?.length?`\n已有角色：${existing.map(c=>c.name).join('、')}\n请生成与已有角色互补的新角色。`:'\n请为这个故事生成核心角色。';
+    return this.chat(`故事设定：${premise||'未提供'}\n类型：${genre||'未指定'}${extra}\n\n请生成一个详细的人物角色，包含：\n- **姓名**\n- **角色定位**\n- **年龄与外貌**\n- **性格特点**（5个关键词+详细描述）\n- **背景故事**（200字）\n- **动机与目标**\n- **与其他角色的可能关系**`,'你是一位专业的人物塑造顾问，擅长创作立体丰满的人物。请用中文回复。');
+  },
+  async chapterIdeas(premise,genre,context){
+    return this.chat(`故事设定：${premise||'未提供'}\n类型：${genre||'未指定'}\n当前进度：${context||'故事开头'}\n\n请为接下来的一章提供：\n1. **章节标题建议**（3个选项）\n2. **本章概要**（150字）\n3. **开篇建议**（100字开头）\n4. **关键场景**（2-3个重要场景）\n5. **结尾钩子**（如何吸引读者继续阅读）`,'你是一位小说写作教练。请用中文回复。');
+  },
+  async worldIdea(premise,genre){
+    return this.chat(`故事设定：${premise||'未提供'}\n类型：${genre||'未指定'}\n\n请为这个故事的世界补充一个有趣的设定：要独特、自洽，能丰富故事的深度。`,'你是一位世界观架构师。请用中文回复。');
+  },
+  async continueWriting(lastContent,characters,premise){
+    return this.chat(`请续写以下小说的下一段内容（约300-500字）：\n\n故事设定：${premise||'未提供'}\n${characters?.length?`主要人物：${characters.map(c=>`${c.name}(${c.role||'未知角色'})`).join('、')}`:''}\n\n前文内容：\n${lastContent.slice(-1000)}\n\n要求：\n1. 保持一致的文风和叙事视角\n2. 情节自然推进\n3. 适当加入对话、心理或环境描写\n4. 在合适处结束，留下发展空间`,'你是一位小说续写专家，擅长延续叙事风格。请用中文回复。');
+  },
+  async polish(text){
+    return this.chat(`请润色以下文字，使其更流畅优美：\n\n${text}\n\n要求：保持原意，优化表达，修正语病，让文字更有文采。`,'你是一位文字润色专家。请用中文回复。');
+  },
+};
+
 const App={
   data:{
     novel:{title:'',genre:'',premise:''},
@@ -341,6 +450,7 @@ const App={
     if(saved) this.data=saved;
     this.bindEvents();
     this.renderAll();
+    this.loadSettings();
     this._showStatus('saved');
   },
 
@@ -389,9 +499,23 @@ const App={
     document.getElementById('btnSaveWorld').addEventListener('click',()=>this.saveWorldItem());
     document.getElementById('btnDeleteWorld').addEventListener('click',()=>this.deleteWorldItem());
     document.querySelectorAll('.btn-tag').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.btn-tag').forEach(x=>x.classList.remove('active'));b.classList.add('active');this.worldFilter=b.dataset.cat;this.renderWorldList();}));
+    // AI view tabs
+    document.querySelectorAll('.ai-view-tab').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.ai-view-tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');const v=b.dataset.view;document.getElementById('aiViewGenerate').classList.toggle('hidden',v!=='generate');document.getElementById('aiViewNotes').classList.toggle('hidden',v!=='notes');if(v==='notes')this.renderNoteList();}));
+    // AI actions
+    document.querySelectorAll('.btn-ai-action').forEach(b=>b.addEventListener('click',()=>this.aiQuickAction(b.dataset.action)));
+    document.getElementById('btnAiGenerate').addEventListener('click',()=>this.aiGenerate());
+    document.getElementById('btnAiCopy').addEventListener('click',()=>this.aiCopy());
+    document.getElementById('btnAiSaveNote').addEventListener('click',()=>this.aiSaveAsNote());
+    document.getElementById('btnAiClose').addEventListener('click',()=>document.getElementById('aiResponse').classList.add('hidden'));
+    // Notes
     document.getElementById('btnAddNote').addEventListener('click',()=>this.openNoteModal());
     document.getElementById('btnSaveNote').addEventListener('click',()=>this.saveNote());
     document.getElementById('btnDeleteNote').addEventListener('click',()=>this.deleteNote());
+    // Settings - provider & auto-save
+    document.getElementById('settingProvider').addEventListener('change',()=>this.onProviderChange());
+    document.getElementById('settingApiKey').addEventListener('blur',()=>this.saveSettings());
+    document.getElementById('settingModel').addEventListener('blur',()=>this.saveSettings());
+    document.getElementById('settingBaseURL').addEventListener('blur',()=>this.saveSettings());
     document.getElementById('btnExport').addEventListener('click',()=>this.exportData());
     document.getElementById('btnImport').addEventListener('click',()=>document.getElementById('importFile').click());
     document.getElementById('importFile').addEventListener('change',e=>this.importData(e));
@@ -412,7 +536,7 @@ const App={
     else if(tab==='characters')this.renderCharacterList();
     else if(tab==='chapters')this.renderChapterList();
     else if(tab==='worldbuilding')this.renderWorldList();
-    else if(tab==='notes')this.renderNoteList();
+    else if(tab==='ai')this.renderNoteList();
   },
   renderAll(){this.renderOutline();this.loadNovelInfo();},
 
@@ -636,6 +760,63 @@ const App={
     const idx=parseInt(document.getElementById('noteId').value);
     this.confirm('确定要删除这个笔记吗？',()=>{this.data.notes.splice(idx,1);this.saveData();this.closeModal('modalNote');this.renderNoteList();});
   },
+
+  /* ========== AI ========== */
+  async aiQuickAction(action){
+    const {premise,genre}=this.data.novel;
+    let fn=null,msg='';
+    switch(action){
+      case 'outline':fn=()=>LLM.outline(premise,genre,this.data.novel.title);msg='正在生成大纲...';break;
+      case 'character':fn=()=>LLM.character(premise,genre,this.data.characters);msg='正在生成人物...';break;
+      case 'chapter':const lc=this.data.chapters.slice(-1)[0];const ctx=lc?`刚完成：${lc.title} - ${lc.summary}`:'故事开头';fn=()=>LLM.chapterIdeas(premise,genre,ctx);msg='正在生成章节灵感...';break;
+      case 'worldbuilding':fn=()=>LLM.worldIdea(premise,genre);msg='正在生成世界观创意...';break;
+      case 'continue':const last=this.data.chapters.slice(-1)[0];if(!last||!last.content){this.toast('请先写一些内容再续写');return;}fn=()=>LLM.continueWriting(last.content,this.data.characters,premise);msg='正在续写...';break;
+      case 'polish':this.toast('请在下方输入框粘贴需要润色的文字');document.getElementById('aiPrompt').value='请润色以下文字：\n\n';document.getElementById('aiPrompt').focus();return;
+    }
+    if(fn){this.toast(msg);this._showAI('生成中...');try{const r=await fn();this._lastAI=r;this._showAI(r);}catch(e){this._showAI('❌ '+e.message);}}
+  },
+  async aiGenerate(){
+    const p=document.getElementById('aiPrompt').value.trim();
+    if(!p) return this.toast('请输入你的需求');
+    this._showAI('生成中...');
+    try{const r=await LLM.chat(p,'你是一位专业的小说写作助手，回答应详细、有创意、实用。请用中文回复。');this._lastAI=r;this._showAI(r);}catch(e){this._showAI('❌ '+e.message);}
+  },
+  _lastAI:'',
+  _showAI(t){const c=document.getElementById('aiResponse');const cnt=document.getElementById('aiResponseContent');c.classList.remove('hidden');cnt.textContent=t;cnt.scrollTop=0;},
+  aiCopy(){const t=document.getElementById('aiResponseContent').textContent;navigator.clipboard.writeText(t).then(()=>this.toast('已复制到剪贴板')).catch(()=>this.toast('复制失败，请手动选择文本'));},
+  aiSaveAsNote(){
+    const content=document.getElementById('aiResponseContent').textContent;
+    if(!content||content.startsWith('生成中')||content.startsWith('❌')) return this.toast('没有可保存的内容');
+    this.data.notes.push({id:Date.now().toString(),title:'AI生成 - '+new Date().toLocaleDateString('zh-CN'),source:'AI生成',content,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
+    this.saveData();this.toast('已保存为灵感笔记');
+  },
+
+  /* ========== 设置 ========== */
+  loadSettings(){
+    const p=localStorage.getItem('llm_provider')||'gemini';
+    document.getElementById('settingProvider').value=p;
+    document.getElementById('settingApiKey').value=localStorage.getItem('llm_api_key')||'';
+    document.getElementById('settingModel').value=localStorage.getItem('llm_model')||'';
+    document.getElementById('settingBaseURL').value=localStorage.getItem('llm_base_url')||'';
+    this._toggleCustomFields(p);
+  },
+  saveSettings(){
+    const p=document.getElementById('settingProvider').value;
+    localStorage.setItem('llm_provider',p);
+    localStorage.setItem('llm_api_key',document.getElementById('settingApiKey').value.trim());
+    localStorage.setItem('llm_model',document.getElementById('settingModel').value.trim());
+    if(p==='custom') localStorage.setItem('llm_base_url',document.getElementById('settingBaseURL').value.trim());
+    this.toast('设置已保存');
+  },
+  onProviderChange(){
+    const p=document.getElementById('settingProvider').value;
+    this._toggleCustomFields(p);
+    const defModels={gemini:'gemini-2.0-flash',deepseek:'deepseek-chat',qwen:'qwen-plus',custom:''};
+    const cur=document.getElementById('settingModel').value;
+    if(!cur||['gemini-2.0-flash','gemini-1.5-pro','deepseek-chat','deepseek-reasoner','qwen-turbo','qwen-plus','qwen-max'].includes(cur)) document.getElementById('settingModel').value=defModels[p]||'';
+    this.saveSettings();
+  },
+  _toggleCustomFields(p){document.querySelectorAll('.custom-only').forEach(el=>el.classList.toggle('hidden',p!=='custom'));},
 
   /* ========== 数据管理 ========== */
   exportData(){
