@@ -290,11 +290,12 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 <div class="modal-overlay hidden" id="modalSettings"><div class="modal">
 <div class="modal-header"><h3>⚙️ 设置</h3><button class="btn-icon modal-close" data-modal="modalSettings">✕</button></div>
 <div class="modal-body">
-<p style="color:var(--text-secondary);font-size:13px;margin-bottom:16px">数据使用 IndexedDB + localStorage 双保险存储。换手机或清除浏览器数据前记得导出备份。</p>
-<div class="form-group"><label>AI 服务商</label><select id="settingProvider"><option value="gemini">Gemini（需梯子）</option><option value="deepseek">DeepSeek（直连）</option><option value="qwen">通义千问 Qwen（直连）</option><option value="custom">自定义 OpenAI 兼容</option></select></div>
+<p style="color:var(--text-secondary);font-size:13px;margin-bottom:4px">数据使用 IndexedDB + localStorage 双保险存储。换手机或清除浏览器数据前记得导出备份。</p>
+<p style="color:var(--text-muted);font-size:11px;margin-bottom:16px">版本 1.0.1</p>
+<p style="color:var(--text-secondary);font-size:12px;margin-bottom:16px;background:var(--card);padding:8px;border-radius:var(--radius-sm)">💡 API 地址填 Gemini 的 URL 则自动用 Gemini 格式，填其他的自动用 OpenAI 兼容格式（DeepSeek、Qwen、Kimi 等都支持）。</p>
+<div class="form-group"><label>API 地址</label><input type="text" id="settingBaseURL" placeholder="OpenAI 兼容：https://api.xxx.com/v1/chat/completions&#10;Gemini：https://generativelanguage.googleapis.com/v1beta/models"></div>
 <div class="form-group"><label>API Key</label><input type="password" id="settingApiKey" placeholder="输入 API Key..."></div>
-<div class="form-group"><label>模型名称</label><input type="text" id="settingModel" placeholder="如：gemini-2.0-flash / deepseek-chat / qwen-plus"></div>
-<div class="form-group custom-only hidden"><label>自定义 API 地址</label><input type="text" id="settingBaseURL" placeholder="https://api.xxx.com/v1/chat/completions"></div>
+<div class="form-group"><label>模型名称</label><input type="text" id="settingModel" placeholder="如：deepseek-chat / gemini-2.0-flash / qwen-plus"></div>
 <hr>
 <div class="form-group">
   <label>数据管理</label>
@@ -362,22 +363,15 @@ const Storage={
   }
 };
 
-/* ===== LLM: multi-provider AI ===== */
+/* ===== LLM: auto-detect API format ===== */
 const LLM={
-  _providers:{
-    gemini:{name:'Gemini',base:'https://generativelanguage.googleapis.com/v1beta/models',fmt:'gemini',models:['gemini-2.0-flash','gemini-1.5-pro']},
-    deepseek:{name:'DeepSeek',base:'https://api.deepseek.com/v1/chat/completions',fmt:'openai',models:['deepseek-chat','deepseek-reasoner']},
-    qwen:{name:'通义千问',base:'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',fmt:'openai',models:['qwen-turbo','qwen-plus','qwen-max']},
-    custom:{name:'自定义',base:'',fmt:'openai',models:[]},
-  },
-
   getConfig(){
-    const provider=localStorage.getItem('llm_provider')||'gemini';
+    const baseURL=localStorage.getItem('llm_base_url')||'';
     const apiKey=localStorage.getItem('llm_api_key')||'';
-    const model=localStorage.getItem('llm_model')||'gemini-2.0-flash';
-    let baseURL=this._providers[provider]?.base||'';
-    if(provider==='custom') baseURL=localStorage.getItem('llm_base_url')||'';
-    return {provider,apiKey,model,baseURL,apiFormat:this._providers[provider]?.fmt||'openai'};
+    const model=localStorage.getItem('llm_model')||'';
+    // Auto-detect: Gemini URL → gemini format, anything else → openai format
+    const isGemini=baseURL.includes('generativelanguage.googleapis.com');
+    return {apiKey,model,baseURL,isGemini};
   },
 
   async chat(prompt,systemPrompt){
@@ -386,7 +380,7 @@ const LLM={
     if(!cfg.baseURL||(!cfg.baseURL.includes('://'))) throw new Error('请先在设置中配置 API 地址');
 
     let url,body,headers;
-    if(cfg.apiFormat==='gemini'){
+    if(cfg.isGemini){
       url=`${cfg.baseURL}/${cfg.model}:generateContent?key=${cfg.apiKey}`;
       const contents=[];
       if(systemPrompt){contents.push({role:'user',parts:[{text:systemPrompt}]});contents.push({role:'model',parts:[{text:'好的，请告诉我具体需要什么。'}]});}
@@ -405,7 +399,7 @@ const LLM={
     const res=await fetch(url,{method:'POST',headers,body});
     if(!res.ok){const err=await res.json().catch(()=>({}));throw new Error(err.error?.message||err.message||`请求失败 (${res.status})`);}
     const data=await res.json();
-    if(cfg.apiFormat==='gemini') return data.candidates?.[0]?.content?.parts?.[0]?.text||'';
+    if(cfg.isGemini) return data.candidates?.[0]?.content?.parts?.[0]?.text||'';
     return data.choices?.[0]?.message?.content||'';
   },
 
@@ -511,11 +505,10 @@ const App={
     document.getElementById('btnAddNote').addEventListener('click',()=>this.openNoteModal());
     document.getElementById('btnSaveNote').addEventListener('click',()=>this.saveNote());
     document.getElementById('btnDeleteNote').addEventListener('click',()=>this.deleteNote());
-    // Settings - provider & auto-save
-    document.getElementById('settingProvider').addEventListener('change',()=>this.onProviderChange());
+    // Settings auto-save
+    document.getElementById('settingBaseURL').addEventListener('blur',()=>this.saveSettings());
     document.getElementById('settingApiKey').addEventListener('blur',()=>this.saveSettings());
     document.getElementById('settingModel').addEventListener('blur',()=>this.saveSettings());
-    document.getElementById('settingBaseURL').addEventListener('blur',()=>this.saveSettings());
     document.getElementById('btnExport').addEventListener('click',()=>this.exportData());
     document.getElementById('btnImport').addEventListener('click',()=>document.getElementById('importFile').click());
     document.getElementById('importFile').addEventListener('change',e=>this.importData(e));
@@ -793,37 +786,30 @@ const App={
 
   /* ========== 设置 ========== */
   loadSettings(){
-    const p=localStorage.getItem('llm_provider')||'gemini';
-    document.getElementById('settingProvider').value=p;
+    document.getElementById('settingBaseURL').value=localStorage.getItem('llm_base_url')||'';
     document.getElementById('settingApiKey').value=localStorage.getItem('llm_api_key')||'';
     document.getElementById('settingModel').value=localStorage.getItem('llm_model')||'';
-    document.getElementById('settingBaseURL').value=localStorage.getItem('llm_base_url')||'';
-    this._toggleCustomFields(p);
   },
   saveSettings(){
-    const p=document.getElementById('settingProvider').value;
-    localStorage.setItem('llm_provider',p);
+    localStorage.setItem('llm_base_url',document.getElementById('settingBaseURL').value.trim());
     localStorage.setItem('llm_api_key',document.getElementById('settingApiKey').value.trim());
     localStorage.setItem('llm_model',document.getElementById('settingModel').value.trim());
-    if(p==='custom') localStorage.setItem('llm_base_url',document.getElementById('settingBaseURL').value.trim());
     this.toast('设置已保存');
   },
-  onProviderChange(){
-    const p=document.getElementById('settingProvider').value;
-    this._toggleCustomFields(p);
-    const defModels={gemini:'gemini-2.0-flash',deepseek:'deepseek-chat',qwen:'qwen-plus',custom:''};
-    const cur=document.getElementById('settingModel').value;
-    if(!cur||['gemini-2.0-flash','gemini-1.5-pro','deepseek-chat','deepseek-reasoner','qwen-turbo','qwen-plus','qwen-max'].includes(cur)) document.getElementById('settingModel').value=defModels[p]||'';
-    this.saveSettings();
-  },
-  _toggleCustomFields(p){document.querySelectorAll('.custom-only').forEach(el=>el.classList.toggle('hidden',p!=='custom'));},
 
   /* ========== 数据管理 ========== */
-  exportData(){
+  async exportData(){
     const ed={...this.data,exportedAt:new Date().toISOString(),version:1};
-    const blob=new Blob([JSON.stringify(ed,null,2)],{type:'application/json'});
+    const json=JSON.stringify(ed,null,2);
+    const name=`墨韵_备份_${new Date().toISOString().slice(0,10)}.json`;
+    const blob=new Blob([json],{type:'application/json'});
+    // Mobile: use native share sheet (save to Files / send to app etc.)
+    if(navigator.share&&navigator.canShare){
+      try{await navigator.share({title:'墨韵数据备份',files:[new File([blob],name,{type:'application/json'})]});this.toast('已导出');return;}catch(e){if(e.name==='AbortError')return;}
+    }
+    // Desktop fallback: direct download
     const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');a.href=url;a.download=`墨韵_备份_${new Date().toISOString().slice(0,10)}.json`;a.click();
+    const a=document.createElement('a');a.href=url;a.download=name;a.click();
     URL.revokeObjectURL(url);this.toast('数据已导出');
   },
   importData(e){
